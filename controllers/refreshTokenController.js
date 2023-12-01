@@ -1,14 +1,12 @@
-// const usersDB = {
-//   users: require("../model/users.json"),
-//   setUsers: function (data) {
-//     this.users = data;
-//   },
-// };
 const User = require("../model/User");
 const jwt = require("jsonwebtoken");
 
 const handleRefreshToken = async (req, res) => {
   const cookies = req.cookies;
+  console.log(
+    "🚀 ~ file: refreshTokenController.js:6 ~ handleRefreshToken ~ cookies:",
+    cookies
+  );
   if (!cookies?.jwt) {
     return res.sendStatus(401);
   }
@@ -17,10 +15,11 @@ const handleRefreshToken = async (req, res) => {
 
   const refreshToken = cookies.jwt;
 
-  // const foundUser = usersDB.users.find(
-  //   (person) => person.refreshToken === refreshToken
-  // );
   const foundUser = await User.findOne({ refreshToken }).exec();
+  console.log(
+    "🚀 ~ file: refreshTokenController.js:19 ~ handleRefreshToken ~ foundUser:",
+    foundUser
+  );
 
   if (!foundUser) return res.sendStatus(403); // Forbidden
 
@@ -29,21 +28,20 @@ const handleRefreshToken = async (req, res) => {
     if (err || foundUser.username !== decoded.username) {
       return res.sendStatus(403);
     }
-    const roles = Object.values(foundUser.roles);
 
     const accessToken = jwt.sign(
       {
-        UserInfo: {
-          username: decoded.username,
-          roles: roles,
-        },
+        username: decoded.username,
       },
 
       process.env.ACCESS_TOKEN_SECRET,
       { expiresIn: "30s" }
     );
 
-    res.json({ accessToken });
+    const username = foundUser.username;
+    const password = foundUser.password;
+
+    res.json({ accessToken, username });
   });
 };
 
